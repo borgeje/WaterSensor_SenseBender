@@ -19,7 +19,7 @@
  *******************************
  *
  * REVISION HISTORY
- * Version 1.0 - Joao E Borges
+ * Version 2.0 - Joao E Borges
  * 
  * DESCRIPTION
  * Water leak sensor
@@ -30,7 +30,7 @@
  */
 
 
-#define MY_DEBUG
+//#define MY_DEBUG
 #define MY_RADIO_NRF24
 //#define BATT_SENSOR
 
@@ -46,7 +46,7 @@
 #include <sha204_library.h>
 #include <RunningAverage.h>
 
-#define RELEASE "1.4"
+#define RELEASE "2.0"
 #define AVERAGES 2
 
 // Child sensor ID's
@@ -57,7 +57,7 @@
 #define CHILD_ID_BATT_SENSOR 5
 
 // How many milli seconds between each measurement
-#define MEASURE_INTERVAL 20000        //60 segundos (tempo entre medidasa, que o micro fica dormindo)
+#define MEASURE_INTERVAL 60000        //60 segundos (tempo entre medidasa, que o micro fica dormindo)
 
 // How many milli seconds should we wait for OTA?
 #define OTA_WAIT_PERIOD 300
@@ -76,8 +76,9 @@
 // Pin definitions
 #define TEST_PIN       A0
 #define Water_AnalogPin A1
-#define Water_DigitalPin D3
+//#define Water_DigitalPin D3
 #define LED_PIN        A2
+#define Power_to_Comparator PD3
 #define ATSHA204_PIN   17 // A3
 
 
@@ -120,6 +121,8 @@ RunningAverage raHum(AVERAGES);
 void setup() {
 
   pinMode(LED_PIN, OUTPUT);
+  pinMode(Power_to_Comparator, OUTPUT);
+  digitalWrite(Power_to_Comparator, HIGH);
   digitalWrite(LED_PIN, HIGH);
   delay(1000);
   digitalWrite(LED_PIN, LOW);
@@ -158,8 +161,13 @@ void setup() {
 
 }
 
+
+
+
+
+
 void presentation()  {
-  sendSketchInfo("Sensebender Micro", RELEASE);
+  sendSketchInfo("    Sensebender Micro", RELEASE);
 
   present(CHILD_ID_TEMP,S_TEMP);
   present(CHILD_ID_HUM,S_HUM);
@@ -170,6 +178,11 @@ void presentation()  {
 }
 
 
+
+
+
+
+
 /***********************************************
  *
  *  Main loop function
@@ -177,17 +190,19 @@ void presentation()  {
  ***********************************************/
 void loop() {
 
+  digitalWrite(Power_to_Comparator, HIGH);
+  wait(150);
   measureCount ++;
   sendBattery ++;
   bool forceTransmit = false;
   transmission_occured = false;
-//#ifndef MY_OTA_FIRMWARE_FEATURE
-//  if ((measureCount == 5) && highfreq) 
-//  {
-//    clock_prescale_set(clock_div_8); // Switch to 1Mhz for the reminder of the sketch, save power.
-//    highfreq = false;
-//  } 
-//#endif
+#ifndef MY_OTA_FIRMWARE_FEATURE
+  if ((measureCount == 5) && highfreq) 
+  {
+    clock_prescale_set(clock_div_8); // Switch to 1Mhz for the reminder of the sketch, save power.
+    highfreq = false;
+  } 
+#endif
 
 // CHECK IF ITS TIME TO FORCE SEND THE TEMP, HUMIDITY AND WATER SENSOR <<<<
 
@@ -211,7 +226,7 @@ void loop() {
 //      wait(OTA_WAIT_PERIOD);
 //  }
 //#endif
-
+  digitalWrite(Power_to_Comparator, LOW);
   sleep(MEASURE_INTERVAL);  
 }
 
